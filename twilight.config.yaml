@@ -5,7 +5,7 @@ site:
     # 站点标题
     title: "MakerZ-Blog"
     # 站点副标题
-    subtitle: "这个世界充满假象，唯有痛苦从不说谎"
+    subtitle: "Hi"
     # 语言配置
     lang: "en"
     # 翻译配置
@@ -276,7 +276,7 @@ announcement:
     # 公告标题
     title: "Announcement"
     # 公告内容
-    content: "Welcome to my blog!"
+    content: "这个世界充满假象，唯有痛苦从不说谎"
     # 允许用户关闭公告
     closable: true
     # 链接配置
