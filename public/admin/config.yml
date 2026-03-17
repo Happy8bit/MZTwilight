@@ -24,7 +24,7 @@ collections:
         # 集合名称
         name: "posts"
         # 后台显示标签
-        label: "Posts"
+        label: "标签1"
         # 内容存储目录
         folder: "src/content/posts"
         # 目录嵌套配置
