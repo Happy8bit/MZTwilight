@@ -4,7 +4,7 @@ backend:
     repo: Happy8bit/MZTwilight # 请替换为您的 GitHub 仓库
     branch: main # 请替换为您的分支名称
     site_domain: makerz.cloud # 请替换为您的域名
-    base_url: http://makerz.cloud # 请替换为您的 URL
+    base_url: https://makerz.cloud # 请替换为您的 URL
     auth_endpoint: oauth # OAuth 路由由集成提供
 
 
