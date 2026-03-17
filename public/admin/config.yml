@@ -24,7 +24,7 @@ collections:
         # 集合名称
         name: "posts"
         # 后台显示标签
-        label: "标签1"
+        label: "文章"
         # 内容存储目录
         folder: "src/content/posts"
         # 目录嵌套配置
@@ -85,7 +85,7 @@ collections:
         # 集合名称
         name: "diary"
         # 后台显示标签
-        label: "Diary"
+        label: "日记"
         # 内容存储目录
         folder: "src/content/diary"
         # 条目路径配置
@@ -119,7 +119,7 @@ collections:
         # 集合名称
         name: "albums"
         # 后台显示标签
-        label: "Albums"
+        label: "相册"
         # 内容存储目录
         folder: "src/content/albums"
         # 条目路径配置
@@ -176,7 +176,7 @@ collections:
         # 集合名称
         name: "projects"
         # 后台显示标签
-        label: "Projects"
+        label: "项目"
         # 内容存储目录
         folder: "src/content/projects"
         # 条目路径配置
@@ -221,7 +221,7 @@ collections:
         # 集合名称
         name: "skills"
         # 后台显示标签
-        label: "Skills"
+        label: "技能"
         # 内容存储目录
         folder: "src/content/skills"
         # 允许创建新条目
@@ -314,7 +314,7 @@ collections:
         # 集合名称
         name: "friends"
         # 后台显示标签
-        label: "Friends"
+        label: "友链"
         # 内容存储目录
         folder: "src/content/friends"
         # 允许创建新条目
