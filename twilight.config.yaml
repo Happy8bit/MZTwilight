@@ -75,9 +75,9 @@ site:
             # 横幅文本配置
             homeText:
                 # 在主页显示文本
-                enable: true
+                enable: false
                 # 主标题
-                title: "Twilight"
+                title: "MakerZ"
                 # 副标题，支持单个字符串或字符串数组
                 subtitle:
                     - "Illuminate Our Paths"
