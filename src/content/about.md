@@ -1,3 +1,7 @@
+---
+title: About
+---
+
 # About This Site
 
 Twilight is a CMS integrated static blog template built with [Astro](https://astro.build) framework.
@@ -19,3 +23,6 @@ Twilight is a CMS integrated static blog template built with [Astro](https://ast
 - Advanced content management in [#73](https://github.com/Happy8bit/MZTwilight/pull/73)
 - Nested category support in [#74](https://github.com/Happy8bit/MZTwilight/pull/74)
 - Comprehensive music card plugin in [#81](https://github.com/Happy8bit/MZTwilight/pull/81)
+- Refactored DecapCMS OAuth integration in [#107](https://github.com/Happy8bit/MZTwilight/pull/107)
+- Non-breaking PagesCMS support in [#114](https://github.com/Happy8bit/MZTwilight/pull/114)
+- Directory tree view component in [#117](https://github.com/Happy8bit/MZTwilight/pull/117)

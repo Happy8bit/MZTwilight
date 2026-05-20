@@ -94,13 +94,14 @@ export function MusicCardComponent(properties, children) {
     const nAudio = h("audio", {
         id: `${cardUuid}-audio`,
         src: audioSrc,
-        preload: "metadata"
+        preload: "none"
     });
 
     // Client-side script logic
     const scriptContent = `
     (async function() {
         const cardId = '${cardUuid}';
+        const cardEl = document.getElementById(cardId + '-card');
         const audio = document.getElementById(cardId + '-audio');
         const playBtn = document.getElementById(cardId + '-play');
         const playIcon = playBtn.querySelector('.play-icon');
@@ -127,15 +128,27 @@ export function MusicCardComponent(properties, children) {
         }
 
         // Helper: Parse LRC
-        const stripTimestampPrefix = (line) => line.replace(/^\\s*\\[[^\\]]+\\]\\s*/g, "").trim();
+        const stripTimestampPrefix = (line) => line.replace(/^\s*\[[^\]]+\]\s*/g, "").trim();
 
         const parseTimestamp = (token) => {
             if (!token) return null;
             const normalized = token.trim().replaceAll("：", ":");
             if (!normalized) return null;
 
-            // mm:ss(.xxx)
-            if (normalized.includes(":")) {
+            const colonCount = (normalized.match(/:/g) || []).length;
+
+            // mm:ss:xx format (colon-separated seconds and centiseconds)
+            if (colonCount === 2) {
+                const parts = normalized.split(":");
+                const minute = Number(parts[0]);
+                const second = Number(parts[1]);
+                const fraction = Number(parts[2]);
+                if (!Number.isFinite(minute) || !Number.isFinite(second) || !Number.isFinite(fraction)) return null;
+                return minute * 60 + second + fraction / 100;
+            }
+
+            // mm:ss(.xxx) format
+            if (colonCount === 1 && normalized.includes(":")) {
                 const [mRaw, secRaw] = normalized.split(":", 2);
                 const minute = Number(mRaw);
                 if (!Number.isFinite(minute)) return null;
@@ -146,7 +159,7 @@ export function MusicCardComponent(properties, children) {
                     const [sRaw, fRaw] = secRaw.split(".", 2);
                     second = Number(sRaw);
                     if (!Number.isFinite(second)) return null;
-                    const fracStr = (fRaw || "0").replace(/[^\\d]/g, "");
+                    const fracStr = (fRaw || "0").replace(/[^\d]/g, "");
                     fraction = fracStr ? Number(fracStr) / Math.pow(10, fracStr.length) : 0;
                 } else {
                     second = Number(secRaw);
@@ -155,12 +168,12 @@ export function MusicCardComponent(properties, children) {
                 return minute * 60 + second + fraction;
             }
 
-            // ss(.xxx)
+            // ss(.xxx) format
             if (normalized.includes(".")) {
                 const [sRaw, fRaw] = normalized.split(".", 2);
                 const second = Number(sRaw);
                 if (!Number.isFinite(second)) return null;
-                const fracStr = (fRaw || "0").replace(/[^\\d]/g, "");
+                const fracStr = (fRaw || "0").replace(/[^\d]/g, "");
                 const fraction = fracStr ? Number(fracStr) / Math.pow(10, fracStr.length) : 0;
                 return second + fraction;
             }
@@ -258,38 +271,51 @@ export function MusicCardComponent(properties, children) {
             }
         }
 
-        // Meting Logic
-        if (metingUrl) {
-            try {
-                const res = await fetch(metingUrl);
-                const data = await res.json();
-                const music = Array.isArray(data) ? data[0] : data;
-                
-                if (music) {
-                    const titleEl = document.querySelector('#' + cardId + '-card .music-title');
-                    const artistEl = document.querySelector('#' + cardId + '-card .music-artist');
-                    const coverEl = document.querySelector('#' + cardId + '-card .music-cover');
+        const init = async () => {
+            // Meting Logic
+            if (metingUrl) {
+                try {
+                    const res = await fetch(metingUrl);
+                    const data = await res.json();
+                    const music = Array.isArray(data) ? data[0] : data;
                     
-                    if (titleEl) titleEl.innerText = music.title;
-                    if (artistEl) artistEl.innerText = music.author;
-                    if (coverEl) coverEl.style.backgroundImage = 'url("' + music.pic + '")';
-                    
-                    audio.src = music.url;
-                    
-                    if (music.lrc) {
-                        lrcSrc = music.lrc;
-                        inlineLyrics = ""; // Clear inline lyrics to force load from new src
-                        await loadLyrics(); // Reload lyrics
+                    if (music) {
+                        const titleEl = cardEl.querySelector('.music-title');
+                        const artistEl = cardEl.querySelector('.music-artist');
+                        const coverEl = cardEl.querySelector('.music-cover');
+                        
+                        if (titleEl) titleEl.innerText = music.title;
+                        if (artistEl) artistEl.innerText = music.author;
+                        if (coverEl) coverEl.style.backgroundImage = 'url("' + music.pic + '")';
+                        
+                        audio.src = music.url;
+                        
+                        if (music.lrc) {
+                            lrcSrc = music.lrc;
+                            inlineLyrics = ""; // Clear inline lyrics to force load from new src
+                            await loadLyrics(); // Reload lyrics
+                        }
                     }
+                } catch (e) {
+                    console.error('Meting fetch error:', e);
+                    currentLyricEl.innerText = "Error loading music data";
                 }
-            } catch (e) {
-                console.error('Meting fetch error:', e);
-                currentLyricEl.innerText = "Error loading music data";
+            } else {
+                // Load initial lyrics if not using Meting (or Meting url empty)
+                await loadLyrics();
             }
-        } else {
-            // Load initial lyrics if not using Meting (or Meting url empty)
-            loadLyrics();
-        }
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    init();
+                    observer.disconnect();
+                }
+            });
+        }, { rootMargin: '100px' });
+
+        observer.observe(cardEl);
 
         function updatePlayState() {
             if (isPlaying) {

@@ -5,21 +5,26 @@ import { LinkPresets } from "@constants/link-presets";
 import { LinkPreset } from "@/types/config";
 import { friendsData } from "@utils/friends";
 import Markdown from "@components/common/markdown.astro";
+import Comment from "@components/comment.astro";
 import GridLayout from "@layouts/grid.astro";
 import BackwardButton from "@components/backwardButton.astro";
 
 
-const pageTitle = LinkPresets[LinkPreset.Friends].name;
-const pageDescription = LinkPresets[LinkPreset.Friends].description;
-
 const friendsPost = await getEntry("spec", "friends");
-
 if (!friendsPost) {
     throw new Error("friends page content not found");
 }
+const pageTitle = friendsPost.data.title || LinkPresets[LinkPreset.Friends].name;
+const pageDescription = friendsPost.data.description || LinkPresets[LinkPreset.Friends].description;
 
-const { Content } = await render(friendsPost);
+const { Content, headings } = await render(friendsPost);
 const items = friendsData;
+
+// 将页面主标题添加到目录中
+const allHeadings = [
+    { depth: 1, slug: "friends-page-title", text: pageTitle },
+    ...headings
+];
 
 function shuffleArray(array) {
     const newArray = [...array];
@@ -33,13 +38,13 @@ function shuffleArray(array) {
 const shuffledItems = shuffleArray(items);
 ---
 
-<GridLayout title={pageTitle} description={pageDescription}>
+<GridLayout title={pageTitle} description={pageDescription} headings={allHeadings}>
     <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
         <div class="card-base z-10 px-9 py-6 relative w-full ">
             <BackwardButton currentPath={Astro.url.pathname} />
             <!-- 标题 -->
             <header class="mb-8">
-                <h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-3">
+                <h1 id="friends-page-title" class="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-3">
                     {pageTitle}
                 </h1>
                 {pageDescription && (
@@ -85,6 +90,7 @@ const shuffledItems = shuffleArray(items);
             </Markdown>
         </div>
     </div>
+    <Comment path="/friends/" />
 </GridLayout>
 
 <style>

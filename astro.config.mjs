@@ -6,17 +6,18 @@ import tailwindcss from "@tailwindcss/vite";
 import swup from "@swup/astro";
 import sitemap from "@astrojs/sitemap";
 import cloudflarePages from "@astrojs/cloudflare";
-import edgeone from "@edgeone/astro";
+import netlify from "@astrojs/netlify";
 import vercel from "@astrojs/vercel";
-import decapCmsOauth from "astro-decap-cms-oauth";
+import edgeone from "@edgeone/astro";
+import decapCmsOauth from "decap-cms-oauth-astro";
 import expressiveCode from "astro-expressive-code";
 import icon from "astro-icon";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import rehypeComponents from "rehype-components"; /* Render the custom directive content */
-import rehypeKatex from "rehype-katex";
 import rehypeSlug from "rehype-slug";
-import remarkDirective from "remark-directive"; /* Handle directives */
-import remarkGithubAdmonitionsToDirectives from "remark-github-admonitions-to-directives";
+import rehypeKatex from "rehype-katex";
+import rehypeComponents from "rehype-components";
+import rehypeCallouts from "rehype-callouts";
+import remarkDirective from "remark-directive";
 import remarkMath from "remark-math";
 import remarkSectionize from "remark-sectionize";
 
@@ -24,10 +25,11 @@ import { siteConfig } from "./src/config.ts";
 import { pluginCollapseButton } from "./src/plugins/expressive-code/collapse-button.ts";
 import { pluginCopyButton } from "./src/plugins/expressive-code/copy-button.js";
 import { pluginLanguageBadge } from "./src/plugins/expressive-code/language-badge.ts";
-import { AdmonitionComponent } from "./src/plugins/rehype-component-admonition.mjs";
 import { GithubCardComponent } from "./src/plugins/rehype-component-github-card.mjs";
 import { MusicCardComponent } from "./src/plugins/rehype-component-music-card.mjs";
+import { rehypeAdmonitions } from "./src/plugins/rehype-admonitions.mjs";
 import { rehypeMermaid } from "./src/plugins/rehype-mermaid.mjs";
+import { rehypeLazyLoadMedia } from "./src/plugins/rehype-lazy-load-media.mjs";
 import { parseDirectiveNode } from "./src/plugins/remark-directive-rehype.js";
 import { remarkExcerpt } from "./src/plugins/remark-excerpt.js";
 import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
@@ -39,9 +41,14 @@ const adapter = process.env.GITHUB_ACTIONS
     ? undefined
     : (process.env.CF_PAGES
         ? cloudflarePages()
-        : (process.env.EDGEONE
-            ? edgeone()
-            : vercel({ mode: "serverless" })));
+        : (process.env.NETLIFY
+            ? netlify()
+            : (process.env.EDGEONE
+                ? edgeone()
+                : vercel({ mode: "serverless" })
+            )
+        )
+    );
 
 // Ref: https://astro.build/config
 export default defineConfig({
@@ -51,8 +58,9 @@ export default defineConfig({
     adapter: adapter,
     integrations: [
         decapCmsOauth({
+            configPath: "./.decap.yml", // Path to the Decap CMS configuration file
             decapCMSVersion: "3.9.0",
-            oauthDisabled: false, // Disable it to use oauth, requires .env configuration
+            enable: false, // Set to true to use oauth (Requires .env configuration)
         }),
         swup({
             theme: false,
@@ -147,30 +155,12 @@ export default defineConfig({
             remarkMath,
             remarkReadingTime,
             remarkExcerpt,
-            remarkGithubAdmonitionsToDirectives,
             remarkDirective,
             remarkSectionize,
             parseDirectiveNode,
             remarkMermaid,
         ],
         rehypePlugins: [
-            rehypeKatex,
-            rehypeSlug,
-            rehypeMermaid,
-            [
-                rehypeComponents,
-                {
-                    components: {
-                        github: GithubCardComponent,
-                        music: MusicCardComponent,
-                        note: (x, y) => AdmonitionComponent(x, y, "note"),
-                        tip: (x, y) => AdmonitionComponent(x, y, "tip"),
-                        important: (x, y) => AdmonitionComponent(x, y, "important"),
-                        caution: (x, y) => AdmonitionComponent(x, y, "caution"),
-                        warning: (x, y) => AdmonitionComponent(x, y, "warning"),
-                    },
-                },
-            ],
             [
                 rehypeAutolinkHeadings,
                 {
@@ -194,14 +184,48 @@ export default defineConfig({
                     },
                 },
             ],
+            rehypeSlug,
+            rehypeKatex,
+            [
+                rehypeComponents,
+                {
+                    components: {
+                        github: GithubCardComponent,
+                        music: MusicCardComponent,
+                    },
+                },
+            ],
+            [
+                rehypeCallouts,
+                {
+                    theme: "github",
+                    showIndicator: false,
+                    tags: {
+                        nonCollapsibleContainerTagName: "blockquote",
+                    },
+                    props: {
+                        containerProps: (node, type) => ({ className: ["admonition", `bdm-${type}`] }),
+                        titleProps: { className: "bdm-title" },
+                        contentProps: { className: "bdm-content" },
+                    },
+                },
+            ],
+            rehypeAdmonitions,
+            rehypeMermaid,
+            rehypeLazyLoadMedia,
         ],
     },
     vite: {
         plugins: [tailwindcss()],
         build: {
+            cssCodeSplit: true,
+            cssMinify: "esbuild",
+            minify: "esbuild",
+            esbuildOptions: {
+                drop: process.env.NODE_ENV === "production" ? ["console", "debugger"] : [],
+            },
             rollupOptions: {
                 onwarn(warning, warn) {
-                    // temporarily suppress this warning
                     if (
                         warning.message.includes("is dynamically imported by") &&
                         warning.message.includes("but also statically imported by")
@@ -213,7 +237,7 @@ export default defineConfig({
             },
         },
     },
-    build: {
-        inlineStylesheets: "always",
-    },
+    //build: {
+    //    inlineStylesheets: "always",
+    //},
 });
