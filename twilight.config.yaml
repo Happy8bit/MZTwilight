@@ -276,7 +276,7 @@ announcement:
     # 公告标题
     title: "公告"
     # 公告内容
-    content: "这个世界充满假象，唯有痛苦从不说谎"
+    content: "这个世界充满假象，唯有痛苦从不说谎。"
     # 允许用户关闭公告
     closable: false
     # 链接配置
