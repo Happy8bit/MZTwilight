@@ -23,7 +23,6 @@ export function GithubCardComponent(properties, children) {
         );
 
     const repo = properties.repo;
-    const [owner, repoName] = repo.split("/");
     const cardUuid = `GC${Math.random().toString(36).slice(-6)}`; // Collisions are not important
 
     const nAvatar = h(`div#${cardUuid}-avatar`, { class: "gc-avatar" });
@@ -37,10 +36,10 @@ export function GithubCardComponent(properties, children) {
         h("div", { class: "gc-titlebar-left" }, [
             h("div", { class: "gc-owner" }, [
                 nAvatar,
-                h("div", { class: "gc-user" }, owner),
+                h("div", { class: "gc-user" }, repo.split("/")[0]),
             ]),
             h("div", { class: "gc-divider" }, "/"),
-            h("div", { class: "gc-repo" }, repoName),
+            h("div", { class: "gc-repo" }, repo.split("/")[1]),
         ]),
         h("div", { class: "github-logo" }),
     ]);
@@ -60,21 +59,15 @@ export function GithubCardComponent(properties, children) {
         { type: "text/javascript", defer: true },
         `
         const init = () => {
-            fetch('/api/github-card/${owner}/${repoName}/').then(response => {
-                if (!response.ok) throw new Error('API returned ' + response.status);
-                return response.json();
-            }).then(data => {
-                if (data.error) throw new Error(data.error);
-                document.getElementById('${cardUuid}-description').innerText = data.description || "Description not set";
-                document.getElementById('${cardUuid}-language').innerText = data.language || "Unknown";
-                document.getElementById('${cardUuid}-forks').innerText = data.forks || "0";
-                document.getElementById('${cardUuid}-stars').innerText = data.stars || "0";
+            fetch('https://api.github.com/repos/${repo}', { referrerPolicy: "no-referrer" }).then(response => response.json()).then(data => {
+                document.getElementById('${cardUuid}-description').innerText = data.description?.replace(/:[a-zA-Z0-9_]+:/g, '') || "Description not set";
+                document.getElementById('${cardUuid}-language').innerText = data.language;
+                document.getElementById('${cardUuid}-forks').innerText = Intl.NumberFormat('en-us', { notation: "compact", maximumFractionDigits: 1 }).format(data.forks).replaceAll("\u202f", '');
+                document.getElementById('${cardUuid}-stars').innerText = Intl.NumberFormat('en-us', { notation: "compact", maximumFractionDigits: 1 }).format(data.stargazers_count).replaceAll("\u202f", '');
                 const avatarEl = document.getElementById('${cardUuid}-avatar');
-                if (data.avatarUrl) {
-                    avatarEl.style.backgroundImage = 'url(' + data.avatarUrl + ')';
-                    avatarEl.style.backgroundColor = 'transparent';
-                }
-                document.getElementById('${cardUuid}-license').innerText = data.license || "no-license";
+                avatarEl.style.backgroundImage = 'url(' + data.owner.avatar_url + ')';
+                avatarEl.style.backgroundColor = 'transparent';
+                document.getElementById('${cardUuid}-license').innerText = data.license?.spdx_id || "no-license";
                 document.getElementById('${cardUuid}-card').classList.remove("fetch-waiting");
                 console.log("[GITHUB-CARD] Loaded card for ${repo} | ${cardUuid}.")
             }).catch(err => {
